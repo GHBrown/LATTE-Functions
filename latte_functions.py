@@ -2,7 +2,7 @@
 import copy
 import numpy as np
 import scipy as sp
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 """
 A collection of functions useful for working with the LATTE code (written by scientists at Los Alamos National Lab).
@@ -335,19 +335,39 @@ def makeSKF(outputFileName,parameterizationDictionary):
     dVec=[0]*10 #just nonsense values since ds are placeholders
     gridPointsVec=pD["gridDist"]*np.array(range(pD["nGridPoints"]))
     lineListList=[]
-    #Generate lines
+
+    #grid and atomic information
     lineListList.append([pD["gridDist"],pD["nGridPoints"]]) #line 1
-    lineListList.append(pD["EVec"]+[pD["SPE"]]+pD["UVec"]+pD["fVec"])
+    if (pD["type"]=="homonuclear"):
+        lineListList.append(pD["EVec"]+[pD["SPE"]]+pD["UVec"]+pD["fVec"]) #homonuclear line 2
+    elif (pD["type"]=="heteronuclear"):
+        pass #heteronuclear line 2 is same as homonuclear line 3, so do nothing
+    else:
+        print("ERROR: parameterization type must be \"heteronuclear\"")
+        print("       or \"homonuclear\"")
     lineListList.append([pD["mass"]]+pD["cVec"]+[pD["domain"][1]]+dVec)
+
+    #integral table
     for r in gridPointsVec:
-        eD=pD["elementFunction"](r) #elementDict, for brevity
-        tempLine=[eD["Hdd0"],eD["Hdd1"],eD["Hdd2"],eD["Hpd0"],eD["Hpd1"],
-                  eD["Hpp0"],eD["Hpp1"],eD["Hsd0"],eD["Hsp0"],eD["Hss0"],
-                  eD["Sdd0"],eD["Sdd1"],eD["Sdd2"],eD["Spd0"],eD["Spd1"],
-                  eD["Spp0"],eD["Spp1"],eD["Ssd0"],eD["Ssp0"],eD["Sss0"]]
+        if (r < pD["domain"][0]): #write 1.0s for r < r_min (what LATTE expects)
+            tempLine=[1.0]*20
+        else:
+            eD=pD["elementFunction"](r) #elementDict, for brevity
+            tempLine=[eD["Hdd0"],eD["Hdd1"],eD["Hdd2"],eD["Hpd0"],eD["Hpd1"],
+                    eD["Hpp0"],eD["Hpp1"],eD["Hsd0"],eD["Hsp0"],eD["Hss0"],
+                    eD["Sdd0"],eD["Sdd1"],eD["Sdd2"],eD["Spd0"],eD["Spd1"],
+                    eD["Spp0"],eD["Spp1"],eD["Ssd0"],eD["Ssp0"],eD["Sss0"]]
         lineListList.append(tempLine)
 
-    #Convert numbers to strings and write lines
+    #spline
+    lineListList.append(['Spline'])
+    lineListList.append([1, pD["domain"][1]]) #nInt cutoff
+    lineListList.append([0, 0, -1]) #a1 a2 a3  (for exp(-a1*r+a2)+a3)
+    lineListList.append([pD["domain"][0],pD["domain"][1],0,0,0,0,0,0]) #start end c0 c1 c2 c3 c4 c5
+    #(for c0+c1(r-r0)+c2(r-r0)^2+c3(r-r0)^3+c4(r-r0)^4+c5(r-r0)^5
+
+    
+    #convert numbers to strings and write lines
     for lineList in lineListList:
         lineListString=[str(elem) for elem in lineList]
         fileObject.write(' '.join(lineListString)+'\n')
