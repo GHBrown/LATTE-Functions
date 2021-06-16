@@ -366,10 +366,105 @@ def makeSKF(outputFileName,parameterizationDictionary):
     lineListList.append([pD["domain"][0],pD["domain"][1],0,0,0,0,0,0]) #start end c0 c1 c2 c3 c4 c5
     #(for c0+c1(r-r0)+c2(r-r0)^2+c3(r-r0)^3+c4(r-r0)^4+c5(r-r0)^5
 
-    
     #convert numbers to strings and write lines
     for lineList in lineListList:
         lineListString=[str(elem) for elem in lineList]
         fileObject.write(' '.join(lineListString)+'\n')
     fileObject.close()
     
+
+def plotSKF(fileName,domain):
+    """
+    Plots the elements of Hamiltonian and overlap matrix against distance r
+    ---Inputs---
+    fileName: name of a .skf file, string
+    domain: domain (r values) on which to plot elements, list [r_min, r_max]
+    ---Outputs---
+    NONE: makes and shows plots
+    """
+
+    with open(fileName) as f:
+        linesAsterisksCommas=f.readlines()
+
+    linesAsterisks=[line.replace(',','') for line in linesAsterisksCommas] #clean lines of commas
+    lines=[]*len(linesAsterisks)
+    for line in linesAsterisks: #write asterisk exapanded lines to lines variable
+        if '*' in line:
+            lineSplit=line.split() #split line on spaces
+            for i_entry,entry in enumerate(lineSplit):
+                if '*' in entry: #split *-containing entry on *
+                    entrySplit=entry.split('*')
+                    num=float(entrySplit[1]) #number to be repeated
+                    timesRep=int(float(entrySplit[0])) #times to repeat
+                    expandedEntries=' '.join([str(num)]*timesRep)
+                    lineSplit[i_entry]=expandedEntries
+            lines.append(' '.join(lineSplit))
+
+        else:
+            lines.append(line)
+                
+    if '@' in lines[0]:
+        gridDist=float(lines[1].split()[0]) #distance between gridpoints, on second line for extended format
+        integralTableLineLength=40 #.skf is in extended format
+        HIntegralLabels=['Hff0', 'Hff1', 'Hff2', 'Hff3', 'Hdf0',
+                         'Hdf1', 'Hdf2', 'Hdd0', 'Hdd1', 'Hdd2',
+                         'Hpf0', 'Hpf1', 'Hpd0', 'Hpd1', 'Hpp0',
+                         'Hpp1', 'Hsf0', 'Hsd0', 'Hsp0', 'Hss0']
+        SIntegralLabels=['Sff0', 'Sff1', 'Sff2', 'Sff3', 'Sdf0',
+                         'Sdf1', 'Sdf2', 'Sdd0', 'Sdd1', 'Sdd2',
+                         'Spf0', 'Spf1', 'Spd0', 'Spd1', 'Spp0',
+                         'Spp1', 'Ssf0', 'Ssd0', 'Ssp0', 'Sss0']
+    else:
+        gridDist=float(lines[0].split()[0]) #distance between gridpoints, on first line for simple format
+        integralTableLineLength=20 #.skf is in simple format
+        HIntegralLabels=['Hdd0', 'Hdd1', 'Hdd2', 'Hpd0', 'Hpd1',
+                         'Hpp0', 'Hpp1', 'Hsd0', 'Hsp0', 'Hss0']
+        SIntegralLabels=['Sdd0', 'Sdd1', 'Sdd2', 'Spd0', 'Spd1',
+                         'Spp0', 'Spp1', 'Ssd0', 'Ssp0', 'Sss0']
+
+    linesSplit=[line.split() for line in lines]
+    #find index of integral table's first line
+    firstLineIndex=False
+    foundFirstIntegralLine=False
+    i_line=0
+    while (not foundFirstIntegralLine):
+        splitLine=linesSplit[i_line]
+        if len(splitLine)==integralTableLineLength:
+            foundFirstIntegralLine=True
+            firstLineIndex=i_line
+            if (integralTableLineLength==20):
+                #in simple format line BEFORE integral table has 20 entries
+                #correct for this
+                firstLineIndex+=1 
+        i_line+=1
+        
+    #find index of integral table's last line
+    afterLineIndex=False
+    for i_line,splitLine in enumerate(linesSplit):
+        if ('Spline' in splitLine):
+            afterLineIndex=i_line #'Spline' occurs on line after integral table
+
+    #make plucked integral table into numpy arrays for H and S
+    integralTableLines=linesSplit[firstLineIndex:afterLineIndex]
+    integralTable=np.array([[float(entry) for entry in splitLine] for splitLine in integralTableLines])
+    HTable=integralTable[:,0:int(integralTableLineLength/2)] #first half of columns are for H
+    STable=integralTable[:,int(integralTableLineLength/2):] #second half of columns are for S
+
+    numPoints=HTable.shape[0] #number of points at which integrals are given
+    rValues=gridDist*np.arange(numPoints)
+
+    #plot nonzero H (Hamiltonian) integrals
+    for i_integral,integralValues in enumerate(np.transpose(HTable)):
+        if (sum(abs(integralValues[int(numPoints/3):]))>0.0):
+               plt.plot(rValues,integralValues,label=HIntegralLabels[i_integral])
+    plt.xlim(domain)
+    plt.legend()
+    plt.show()
+
+    #plot S (overlap) integrals
+    for i_integral,integralValues in enumerate(np.transpose(STable)):
+        if (sum(abs(integralValues[int(numPoints/3):]))>0.0):
+               plt.plot(rValues,integralValues,label=SIntegralLabels[i_integral])
+    plt.xlim(domain)
+    plt.legend()
+    plt.show()
