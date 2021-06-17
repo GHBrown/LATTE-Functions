@@ -1,5 +1,6 @@
 
 import copy
+from datetime import datetime
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
@@ -8,7 +9,6 @@ import matplotlib.pyplot as plt
 A collection of functions useful for working with the LATTE code (written by scientists at Los Alamos National Lab).
 This collection of functions was written by Gabriel Brown, University of Illinois Urbana-Champaign.
 """
-
 
 def getLATTEProperty(prprty,fileName):
     """
@@ -46,7 +46,7 @@ def getNumberOfAtoms(simulationDictionary):
     return numberOfAtoms
         
 
-def LATTEDatFile2Dict(fileName):
+def dat2GroupDict(fileName):
     #WILL NEED SOME FIXING TO ACCOMODATE CHANGE TO SIMULATION DICTIONARIES
     """
     Takes arbitrary LATTE .dat file, creates array of atomic coordinates
@@ -91,7 +91,7 @@ def LATTEDatFile2Dict(fileName):
     return qDictionary
 
 
-def groupDictionaryToInputBlock(fileName,groupDictionary,twoDimensional=False):
+def groupDict2Dat(fileName,groupDictionary,twoDimensional=False):
     #WILL NEED SOME FIXING TO ACCOMODATE CHANGE TO SIMULATION DICTIONARIES
     """
     Takes a dictionary defining a set of atomic coordinates and
@@ -323,7 +323,7 @@ def getCoordinateBounds(qDictionary):
     
 def makeSKF(outputFileName,parameterizationDictionary):
     """
-    Writes a .skf format corresponding to the given parameterization dictionary.
+    Writes a .skf format corresponding to the given parameterization dictionary
     ---Inputs---
     outputFileName: name of .skf file, string
     parameterizationDictionary: dictionary with all info about the parameterization
@@ -340,16 +340,16 @@ def makeSKF(outputFileName,parameterizationDictionary):
     lineListList.append([pD["gridDist"],pD["nGridPoints"]]) #line 1
     if (pD["type"]=="homonuclear"):
         lineListList.append(pD["EVec"]+[pD["SPE"]]+pD["UVec"]+pD["fVec"]) #homonuclear line 2
+        lineListList.append([pD["mass"]]+pD["cVec"]+[pD["domainTB"][1]]+dVec) #homonuclear line 3
     elif (pD["type"]=="heteronuclear"):
-        pass #heteronuclear line 2 is same as homonuclear line 3, so do nothing
+        lineListList.append([12345]+pD["cVec"]+[pD["domainTB"][1]]+dVec) #heteronuclear line 2, mass (first entry) is placeholder so use obvious dummy value
     else:
         print("ERROR: parameterization type must be \"heteronuclear\"")
         print("       or \"homonuclear\"")
-    lineListList.append([pD["mass"]]+pD["cVec"]+[pD["domain"][1]]+dVec)
 
     #integral table
     for r in gridPointsVec:
-        if (r < pD["domain"][0]): #write 1.0s for r < r_min (what LATTE expects)
+        if (r < pD["domainTB"][0]): #write 1.0s for r < r_min (what LATTE expects)
             tempLine=[1.0]*20
         else:
             eD=pD["elementFunction"](r) #elementDict, for brevity
@@ -361,9 +361,9 @@ def makeSKF(outputFileName,parameterizationDictionary):
 
     #spline
     lineListList.append(['Spline'])
-    lineListList.append([1, pD["domain"][1]]) #nInt cutoff
+    lineListList.append([1, pD["domainTB"][1]]) #nInt cutoff
     lineListList.append([0, 0, -1]) #a1 a2 a3  (for exp(-a1*r+a2)+a3)
-    lineListList.append([pD["domain"][0],pD["domain"][1],0,0,0,0,0,0]) #start end c0 c1 c2 c3 c4 c5
+    lineListList.append([pD["domainTB"][0],pD["domainTB"][1],0,0,0,0,0,0]) #start end c0 c1 c2 c3 c4 c5
     #(for c0+c1(r-r0)+c2(r-r0)^2+c3(r-r0)^3+c4(r-r0)^4+c5(r-r0)^5
 
     #convert numbers to strings and write lines
@@ -383,7 +383,7 @@ def plotSKF(fileName,domain):
     NONE: makes and shows plots
     """
 
-    with open(fileName) as f:
+    with open(fileName,'r') as f:
         linesAsterisksCommas=f.readlines()
 
     linesAsterisks=[line.replace(',','') for line in linesAsterisksCommas] #clean lines of commas
@@ -468,3 +468,44 @@ def plotSKF(fileName,domain):
     plt.xlim(domain)
     plt.legend()
     plt.show()
+
+
+def makeLAMMPSPairwiseTable(outputFileName,parameterizationDictionary):
+    """
+    Writes a pairwise potential as a LAMMPS pairwise potential table.
+    All of parameterization dictionary should be in atomic units (Bohr radii,
+    Hartrees, etc.). This function generates a table in metal units (eV, Angstroms)
+    and does the conversion internally
+    ---Inputs---
+    outputFileName: name of .table file
+    parameterizationDictionary: dictionary with all info about the parameterization
+    ---Outputs---
+    NONE: structured file of specified name is created
+    """
+    #define unit conversion constants
+    ang_per_bohr=0.529177 # [Anstroms/Bohr radius]
+    eV_per_hart=27.2114 # [eV/Hartree]
+
+    pD=parameterizationDictionary #for brevity
+    lineList=[] #list to which complete strings will be appended 1 per line
+    r_min=pD["domainPair"][0] #[Bohr radii]
+    r_max=pD["domainPair"][1] #[Bohr radii]
+    rValues=np.linspace(r_min,r_max,pD["nGridPoints"]) #[Bohr radii]
+
+    lineList.append('# DATE: ' + datetime.today().strftime('%Y-%m-%d') + ' UNITS: metal CONTRIBUTOR: ' + pD["contributor"] + '\n')
+    lineList.append('# ' + pD["pairDescription"] + '\n')
+    lineList.append('\n')
+    lineList.append(pD["pairKeyword"] + '\n')
+    lineList.append('N ' + str(pD["nGridPoints"]) + '\n')
+    lineList.append('\n')
+
+    for i_r,r in enumerate(rValues): #r [Bohr radii]
+        energy,force=pD["pairFunction"](r) #energy [Hartrees], force [Hartrees/Bohr radius]
+        r_ang=r*ang_per_bohr
+        energy_eV=energy*eV_per_hart
+        force_eV_ang=force*(eV_per_hart/ang_per_bohr)
+        tempValues=[str(i_r+1),str(r_ang),str(energy_eV),str(force_eV_ang)]
+        lineList.append(' '.join(tempValues)+'\n')
+
+    with open(outputFileName,'w') as f:
+        f.writelines(lineList)
