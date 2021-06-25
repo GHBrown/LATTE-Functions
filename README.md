@@ -115,6 +115,8 @@ def makeSKF(outputFileName,parameterizationDictionary):
 def plotSKF(fileName,domain):
     """
     Plots the elements of Hamiltonian and overlap matrix against distance r
+    Only plots an element if lower 2/3 of respective .skf column has
+    nonzero magnitude (since LATTE expects 1.0s below r_min).
     ---Inputs---
     fileName: name of a .skf file, string
     domain: domain (r values) on which to plot elements, list [r_min, r_max]
