@@ -1,12 +1,14 @@
 
 ## LATTE-LAMMPS Functions
+
 A collection of Python functions useful for working with the LATTE and LAMMPS research codes.
 
 These functions are intended to:
 - generate LAMMPS pairwise potential files
-- generate tight binding parameterizations in the form of `.skf` files, which LATTE can convert to a usable parameterization with it's built-in converter `DLtab.py`
+- generate tight binding parameterizations in the form of `.skf` files, which LATTE can convert to a usable parameterization with its built-in converter `DLtab.py`
 
-## Working with the functions
+
+## Working with the provided functions
 
 The main object needed to work with these functions is the "parameterization dictionary", which contains information about species, and their tight binding and pairwise interactions.
 
@@ -83,8 +85,6 @@ def nameOfFunctionToComputePairwiseEandF(r):
 
 ## Documentation
 
-
-
 ```
 def getLATTEProperty(prprty,fileName):
     """
@@ -137,5 +137,5 @@ def makeLAMMPSPairwiseTable(outputFileName,parameterizationDictionary):
 ```
 
 This documentation has been made as complete as possible, but please see these links for more information about the file formats and expected inputs:
-- `.skf` format
-- LAMMPS pairwise table format
+- [`.skf` format](https://dftb.org/fileadmin/DFTB/public/misc/slakoformat.pdf)
+- [LAMMPS pairwise table format](https://docs.lammps.org/pair_table.html)
