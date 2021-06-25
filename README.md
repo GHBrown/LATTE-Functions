@@ -7,6 +7,10 @@ These functions are intended to:
 - generate LAMMPS pairwise potential files
 - generate tight binding parameterizations in the form of `.skf` files, which LATTE can convert to a usable parameterization with its built-in converter `DLtab.py`
 
+See "Working with the provided functions" to see what kind of inputs the functions expect, and see "Documentation" for the function definitions and explanations of the input and output variables.
+
+See `example/example.py` for a working example using some of the provided functions.
+
 
 ## Working with the provided functions
 
