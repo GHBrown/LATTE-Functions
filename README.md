@@ -1,5 +1,5 @@
 
-##LATTE-LAMMPS Functions
+## LATTE-LAMMPS Functions
 A collection of Python functions useful for working with the LATTE and LAMMPS research codes.
 
 These functions are intended to:
