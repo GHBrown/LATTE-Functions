@@ -20,7 +20,7 @@ The main object needed to work with these functions is the "parameterization dic
 
 This object is Python dictionary which has the following form:
 
-```
+```python
 homonuclearDictionary={ #defines interaction between atoms of same species
     "mass": mass of atomic species,
     "gridDist": spacing of grid on which TB interaction is computed, #[Bohr radii]
@@ -51,7 +51,7 @@ heteronuclearDictionary={ #defines interaction between atoms of different specie
 ```
 
 The input-output format of the functions pointers assigned to `"elementFunction"` and `"pairFunction"` are:
-```
+```python
 def nameOfFunctionToComputeHandSElement(r):
     #do some r-dependent computations of matrix elemements
     elementDict={
@@ -89,7 +89,7 @@ def nameOfFunctionToComputePairwiseEandF(r):
 
 ## Documentation
 
-```
+```python
 def getLATTEProperty(prprty,fileName):
     """
     Searches LATTE output text file and returns the specified
