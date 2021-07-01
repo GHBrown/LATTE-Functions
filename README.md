@@ -22,38 +22,50 @@ This object is Python dictionary which has the following form:
 
 ```python
 homonuclearDictionary={ #defines interaction between atoms of same species
-    "mass": mass of atomic species,
-    "gridDist": spacing of grid on which TB interaction is computed, #[Bohr radii]
-    "nGridPoints": number of grid point on which to compute interactions,
-    "type":'homonuclear',
-    "elementFunction": function pointer to function that takes distance and returns Hamiltonian and overlap matrix elements,
-    "domainTB": two element list specifying range on which TB parameterization is viable, #domain of viability, [r_min, r_cut] [Bohr radii]
-    "EVec":three element list of on-site energies, #[E_d, E_p, E_s] 
-    "SPE": spin polarization error (unused),
-    "UVec": three element list of Hubbard U values, #[U_d, U_p, U_s]
-    "fVec": occupations of neutral atom in ground state #[f_d, f_p, f_s]
-    "cVec": 8 element list of pairwise correction polynomial coefficient, #[c_2,c_3,...,c_9]
-    "pairFunction": function pointer to function which takes distance and returns pairwise energy and force,
-    "domainPair": two element list specifying range on which pairwise correction is viable, #domain of viability, [r_min, r_cut] [Bohr radii]
-    "pairKeyword": pair keyword for LAMMPS potential,
-    "pairDescription": string used at LAMMPS potential description,
-    "contributor": appropriate author(s)
+    "mass": ,#mass of atomic species
+    "gridDist": ,#spacing of grid on which TB interaction is computed, [Bohr radii]
+    "nGridPoints": ,#number of grid point on which to compute interactions,
+                    #together with above gridDist specifies grid starting at r=0
+    "type":'homonuclear', #type of interaction, 'homonuclear' or 'heteronuclear'
+    "elementFunction": ,#function pointer to function that takes distance and returns Hamiltonian
+                        #and overlap matrix elements,
+    "domainTB": ,#two element list specifying range on which TB parameterization is viable,
+                 #domain of viability, [r_min, r_cut] [Bohr radii]
+    "EVec": ,#three element list of on-site energies, [E_d, E_p, E_s] 
+    "SPE": ,#spin polarization error (unused)
+    "UVec": ,#three element list of Hubbard U values, [U_d, U_p, U_s]
+    "fVec": ,#occupations of neutral atom in ground state, [f_d, f_p, f_s]
+    "cVec": ,#8 element list of pairwise correction polynomial coefficient
+             #(see .skf link at end of README for polynomial form) [c_2,c_3,...,c_9]
+    "pairFunction": ,#function pointer to function which takes distance and returns
+                     #pairwise energy and force,
+    "domainPair": ,#two element list specifying range on which pairwise correction is viable,
+                   #domain of viability, [r_min, r_cut] [Bohr radii]
+    "pairKeyword": ,#pair keyword string for LAMMPS potential (see LAMMPS link end of README)
+    "pairDescription": ,#string used in LAMMPS potential description (see LAMMPS link)
+    "contributor": ,#appropriate author(s)
     }
 
 heteronuclearDictionary={ #defines interaction between atoms of different species
-    "gridDist": spacing of grid on which TB interaction is computed, #[Bohr radii]
-    "nGridPoints": number of grid point on which to compute interactions,
-    "type":'heteronuclear',
-    "elementFunction": function pointer to function that takes distance and returns Hamiltonian and overlap matrix elements,
-    "domainTB": two element list specifying range on which TB parameterization is viable, #domain of viability, [r_min, r_cut] [Bohr radii]
-    "cVec": 8 element list of pairwise correction polynomial coefficient, #[c_2,c_3,...,c_9]
+    "gridDist": ,#spacing of grid on which TB interaction is computed, [Bohr radii]
+    "nGridPoints": ,#number of grid point on which to compute interactions,
+                    #together with above gridDist specifies grid starting at r=0
+    "type":'heteronuclear', #type of interaction, 'homonuclear' or 'heteronuclear'
+    "elementFunction": ,#function pointer to function that takes distance and returns Hamiltonian
+                        #and overlap matrix elements,
+    "domainTB": ,#two element list specifying range on which TB parameterization is viable,
+                 #domain of viability, [r_min, r_cut] [Bohr radii]
+    "cVec": ,#8 element list of pairwise correction polynomial coefficient
+             #(see .skf link at end of README for polynomial form) [c_2,c_3,...,c_9]
     }
 ```
 
-The input-output format of the functions pointers assigned to `"elementFunction"` and `"pairFunction"` are:
+The input-output format of the functions pointers assigned to `"elementFunction"` and `"pairFunction"` should be:
 ```python
 def nameOfFunctionToComputeHandSElement(r):
-    #do some r-dependent computations of matrix elemements
+    #r: internuclear distance, [Bohr radii]
+    #elementDict: dictionary containing value of matrix elements for two atoms at distance r
+    #r-dependent computations of matrix elemements
     elementDict={
         #0:sigma, 1:pi, 2:delta
         #Hamiltonian elements
@@ -82,6 +94,7 @@ def nameOfFunctionToComputeHandSElement(r):
     return elementDict
 
 def nameOfFunctionToComputePairwiseEandF(r):
+    #r: internuclear distance, [Bohr radii]
     #do some r-dependent computations of energy and force
     return energy, force
 ```
