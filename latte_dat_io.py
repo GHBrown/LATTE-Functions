@@ -11,11 +11,12 @@ import re
 from ase import Atoms
 
 def write_latte_dat(ase_obj,filename):
-    """write latte coordinate file from ase.atom.Atom object
-    
-    :param ase_obj: (ase.atom.Atom obj) ase atoms object where geometry is stored
-    
-    :param filename: (str) filename to write data file to
+    """write latte coordinate file from ase.atom.Atom object.
+    ---Inputs---
+    ase_obj: ase atoms object where geometry is stored, (ase.atom.Atom obj)
+    filename: filename to write data file to, string
+    ---Outputs---
+    NONE: .dat file is created
     """
     cell=np.array(ase_obj.get_cell())
     rx_=" ".join(map(str,cell[0,:]))
@@ -39,11 +40,11 @@ def write_latte_dat(ase_obj,filename):
             
 def read_latte_dat(filename):
     """read latte data file into ase.Atoms object
-    
-    :param filename: (str) filename of latte data file to read
-    
-    :returns: (ase.Atoms) ase.Atoms object containing chemical symbols, positions
-              and cell of system"""
+    ---Inputs---
+    filename: filename of latte data file to read, string 
+    --Outputs--
+    ase.Atoms object containing chemical symbols, positions
+    and cell of system, (ase.Atoms) """
               
     with open(filename,"r") as f:
         lines=f.readlines()
